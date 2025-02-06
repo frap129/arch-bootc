@@ -53,6 +53,17 @@ RUN /dracut-setup.sh && rm /dracut-setup.sh
 # Add ostree tmpfile
 COPY files/ostree-0-integration.conf /usr/lib/tmpfiles.d/
 
+# Alter root file structure a bit for ostree
+RUN mkdir /sysroot
+RUN rm -rf /boot && mkdir /boot
+RUN mv /home /var/ && ln -s /var/home /home
+RUN mv /root /var/roothome && ln -s /var/roothome /home
+RUN mv /usr/local /var/usrlocal && ln -s /var/roothome /root
+RUN mv /srv /var/ && ln -s /var/srv /srv
+
+# Cleanup pacman sockets
+RUN  find "/etc" -type s -exec rm {} \;
+
 # Squash layers
 FROM scratch
 
