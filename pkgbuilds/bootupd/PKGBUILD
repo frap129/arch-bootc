@@ -1,0 +1,27 @@
+pkgname=bootupd
+pkgver=0.2.26
+pkgrel=1
+pkgdesc="Bootloader updater"
+arch=('x86_64' 'aarch64')
+url="https://github.com/coreos/bootupd"
+license=('Apache-2.0' 'MIT')
+depends=('systemd')
+makedepends=('cargo' 'openssl')
+source=("bootupd-${pkgver}.crate::${url}/releases/download/v${pkgver}/bootupd-${pkgver}.crate"
+  "bootupd-${pkgver}-vendor.tar.zstd::${url}/releases/download/v${pkgver}/bootupd-${pkgver}-vendor.tar.zstd")
+sha256sums=('SKIP' 'SKIP')
+
+prepare() {
+  cd "${pkgname}-${pkgver}"
+  tar -xf ../${pkgname}-${pkgver}-vendor.tar.zstd
+}
+
+build() {
+  cd "${pkgname}-${pkgver}"
+  cargo build --release
+}
+
+package() {
+  cd "${pkgname}-${pkgver}"
+  make install DESTDIR="${pkgdir}"
+}

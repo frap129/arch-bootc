@@ -1,0 +1,27 @@
+pkgname=bootc
+pkgver=1.1.4
+pkgrel=1
+pkgdesc="Bootable container system"
+arch=('x86_64' 'aarch64')
+url="https://github.com/containers/bootc"
+license=('Apache-2.0' 'MIT')
+depends=('composefs' 'ostree' 'skopeo' 'podman' 'bootupd')
+makedepends=('make' 'openssl' 'systemd' 'cargo')
+source=("bootc-${pkgver}.tar.zstd::${url}/releases/download/v${pkgver}/bootc-${pkgver}.tar.zstd"
+  "bootc-${pkgver}-vendor.tar.zstd::${url}/releases/download/v${pkgver}/bootc-${pkgver}-vendor.tar.zstd")
+sha256sums=('SKIP' 'SKIP')
+
+prepare() {
+  cd "${pkgname}-${pkgver}"
+  cargo fetch --locked
+}
+
+build() {
+  cd "${pkgname}-${pkgver}"
+  cargo build --release
+}
+
+package() {
+  cd "${pkgname}-${pkgver}"
+  make install DESTDIR="$pkgdir"
+}
