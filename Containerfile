@@ -1,21 +1,27 @@
-ARG BASE_IMAGE="docker.io/library/${BASE_IMAGE_NAME:-archlinux}"
-ARG BASE_IMAGE_FLAVOR="${BASE_IMAGE_FLAVOR:-base}"
+FROM docker.io/archlinux:base-devel AS builder
 
-FROM ${BASE_IMAGE}:${BASE_IMAGE_FLAVOR} AS arch-bootc-base
+RUN pacman-key --init
+RUN pacman-key --populate
+RUN pacman -Sy --noconfirm \
+  arch-install-scripts \
+  ostree
 
-# Setup keyring
-RUN pacman-key --init && \
-    pacman-key --populate
+# This allows using this container to make a deployment.
+RUN ln -s sysroot/ostree /ostree
 
-# Install temporary depndencies
-RUN pacman -Syyu --noconfirm && \
-    pacman -S --noconfirm \
-    git \
-    base-devel
+# This allows using pacstrap -N in a rootless container.
+RUN echo 'root:1000:5000' > /etc/subuid
+RUN echo 'root:1000:5000' > /etc/subgid
 
-# Install kernel, firmware, microcode, bootloader, depndencies
-RUN pacman -S --noconfirm \
-    btrfs-progs\
+# We need the ostree hook.
+RUN install -d /mnt/etc
+COPY files/ostree.conf /mnt/etc/dracut.conf.d/
+COPY files/module-setup.sh /mnt/etc/dracut.conf.d/
+
+# Install packages.
+RUN pacstrap -c -G -M /mnt \
+    base \
+    btrfs-progs \
     linux \ 
     linux-firmware \
     linux-firmware-whence \
@@ -23,30 +29,25 @@ RUN pacman -S --noconfirm \
     amd-ucode \
     grub \
     dracut \
-    skopeo \
     ostree \
     podman
 
-# Create build user
-RUN useradd -m --shell=/bin/bash build && usermod -L build && \
-    echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
-    echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN cp /etc/pacman.conf /mnt/etc/pacman.conf
+RUN echo 'Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch' > /mnt/etc/pacman.d/mirrorlist
 
-# Build and install bootc and bootupd
-USER build
-WORKDIR /home/build
-ADD --chown=build:build pkgbuilds /home/build/pkgbuilds
-RUN cd /home/build/pkgbuilds/bootupd && makepkg -si --noconfirm
-RUN cd /home/build/pkgbuilds/bootc && makepkg -si --noconfirm
+# Turn the pacstrapped rootfs into a container image.
+FROM scratch
+COPY --from=builder /mnt /
 
-USER root
+# Setup keyring
+RUN pacman-key --init && \
+    pacman-key --populate
 
-# Add a platform to os-release
-RUN echo "PLATFORM_ID=\"platform:arch\"" >> /etc/os-release
+# Install bootc and bootupd
+COPY pkgbuilds /pkgbuilds
+RUN pacman -U --noconfirm /pkgbuilds/bootupd/*.pkg.tar.zst /pkgbuilds/bootc/*.pkg.tar.zst && rm -rf /pkgbuilds 
 
 # Generate initramfs
-COPY files/ostree.conf /mnt/etc/dracut.conf.d/
-COPY files/module-setup.sh /mnt/etc/dracut.conf.d/
 COPY dracut-setup.sh /
 RUN /dracut-setup.sh && rm /dracut-setup.sh
 
@@ -54,20 +55,16 @@ RUN /dracut-setup.sh && rm /dracut-setup.sh
 COPY files/ostree-0-integration.conf /usr/lib/tmpfiles.d/
 
 # Alter root file structure a bit for ostree
-RUN mkdir /sysroot
-RUN rm -rf /boot && mkdir /boot
-RUN mv /home /var/ && ln -s /var/home /home
-RUN mv /root /var/roothome && ln -s /var/roothome /home
-RUN mv /usr/local /var/usrlocal && ln -s /var/roothome /root
-RUN mv /srv /var/ && ln -s /var/srv /srv
+RUN mkdir /sysroot && \
+    mkdir /efi && \
+    rm -rf /boot && mkdir /boot && \
+    mv /home /var/ && ln -s /var/home /home && \
+    mv /root /var/roothome && ln -s /var/roothome /home && \
+    mv /usr/local /var/usrlocal && ln -s /var/roothome /root && \
+    mv /srv /var/ && ln -s /var/srv /srv
 
 # Cleanup pacman sockets
 RUN  find "/etc" -type s -exec rm {} \;
-
-# Squash layers
-FROM scratch
-
-COPY --from=arch-bootc-base / /
 
 # Necessary labels
 LABEL containers.bootc 1
