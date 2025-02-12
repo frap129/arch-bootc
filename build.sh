@@ -12,4 +12,4 @@ IMAGE_NAME="arch-bootc"
   makepkg -fcCs
 )
 
-podman build . -t $IMAGE_NAME --net=host --cap-add sys_admin --cap-add mknod
+sudo podman build . -t $IMAGE_NAME --net=host --cap-add sys_admin --cap-add mknod

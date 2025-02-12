@@ -19,7 +19,7 @@ COPY files/ostree.conf /mnt/etc/dracut.conf.d/
 COPY files/module-setup.sh /mnt/etc/dracut.conf.d/
 
 # Install packages.
-RUN pacstrap -c -G -M /mnt \
+RUN pacstrap -c -P /mnt \
     base \
     btrfs-progs \
     linux \ 
@@ -32,16 +32,9 @@ RUN pacstrap -c -G -M /mnt \
     ostree \
     podman
 
-RUN cp /etc/pacman.conf /mnt/etc/pacman.conf
-RUN echo 'Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch' > /mnt/etc/pacman.d/mirrorlist
-
 # Turn the pacstrapped rootfs into a container image.
 FROM scratch
 COPY --from=builder /mnt /
-
-# Setup keyring
-RUN pacman-key --init && \
-    pacman-key --populate
 
 # Install bootc and bootupd
 COPY pkgbuilds /pkgbuilds
