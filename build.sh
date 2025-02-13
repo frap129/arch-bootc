@@ -4,12 +4,12 @@ IMAGE_NAME="arch-bootc"
 
 (
   cd pkgbuilds/bootc
-  makepkg -fcCs
+  makepkg -Ccs
 )
 
 (
   cd pkgbuilds/bootupd
-  makepkg -fcCs
+  makepkg -Ccs
 )
 
 sudo podman build . -t $IMAGE_NAME --net=host --cap-add sys_admin --cap-add mknod
