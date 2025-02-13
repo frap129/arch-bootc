@@ -59,13 +59,12 @@ RUN  find "/etc" -type s -exec rm {} \;
 
 # Alter root file structure a bit for ostree
 RUN mkdir /sysroot /efi && \
-    mv /etc /usr/ && \
-    rm -rf /boot/* /home /root /usr/local /srv /var/* && \
-    ln -s /sysroot/ostree /ostree && \
-    ln -s /var/home /home && \
-    ln -s /var/roothome /root && \
-    ln -s /var/usrlocal /usr/local && \
-    ln -s /var/srv /srv
+    rm -rf /boot/* /var/log /home /root /usr/local /srv && \
+    ln -s sysroot/ostree /ostree && \
+    ln -s var/home /home && \
+    ln -s var/roothome /root && \
+    ln -s var/usrlocal /usr/local && \
+    ln -s var/srv /srv
 
 # Necessary labels
 LABEL containers.bootc 1
