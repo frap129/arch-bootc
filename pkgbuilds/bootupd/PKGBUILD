@@ -7,7 +7,7 @@ url="https://github.com/coreos/bootupd"
 license=('Apache-2.0' 'MIT')
 depends=('systemd')
 makedepends=('cargo' 'openssl')
-source=("bootupd-${pkgver}.crate::${url}/releases/download/v${pkgver}/bootupd-${pkgver}.crate"
+source=("bootupd-${pkgver}.crate::${url}/releases/download/v${pkgver}/bootupd-${pkgver}.tar.zstd"
   "bootupd-${pkgver}-vendor.tar.zstd::${url}/releases/download/v${pkgver}/bootupd-${pkgver}-vendor.tar.zstd")
 sha256sums=('SKIP' 'SKIP')
 
