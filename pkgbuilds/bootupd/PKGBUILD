@@ -1,5 +1,5 @@
 pkgname=bootupd
-pkgver=0.2.26
+pkgver=0.2.27
 pkgrel=1
 pkgdesc="Bootloader updater"
 arch=('x86_64' 'aarch64')
