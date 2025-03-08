@@ -40,22 +40,21 @@ COPY --from=builder /mnt /
 COPY pkgbuilds /pkgbuilds
 RUN pacman -U --noconfirm /pkgbuilds/bootupd/*.pkg.tar.zst /pkgbuilds/bootc/*.pkg.tar.zst && rm -rf /pkgbuilds 
 
+# Add ostree tmpfile
+COPY files/ostree-0-integration.conf /usr/lib/tmpfiles.d/
+
 # Generate initramfs
 COPY dracut-setup.sh /
 RUN /dracut-setup.sh && rm /dracut-setup.sh
-
-# Add ostree tmpfile
-COPY files/ostree-0-integration.conf /usr/lib/tmpfiles.d/
 
 # Move pacman db to /usr since /var will be a mount
 RUN sed -i \
     -e 's|^#\(DBPath\s*=\s*\).*|\1/usr/lib/pacman|g' \
     -e 's|^#\(IgnoreGroup\s*=\s*\).*|\1modified|g' \
     "/etc/pacman.conf" && \
-    mv "/var/lib/pacman" "/usr/lib/"
-
-# Cleanup pacman sockets
-RUN  find "/etc" -type s -exec rm {} \;
+    mv "/var/lib/pacman" "/usr/lib/" && \
+    rm /var/cache/pacman/pkg/* &&
+    find "/etc" -type s -exec rm {} \;
 
 # Alter root file structure a bit for ostree
 RUN mkdir /sysroot /efi && \
