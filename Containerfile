@@ -53,7 +53,7 @@ RUN sed -i \
     -e 's|^#\(IgnoreGroup\s*=\s*\).*|\1modified|g' \
     "/etc/pacman.conf" && \
     mv "/var/lib/pacman" "/usr/lib/" && \
-    rm /var/cache/pacman/pkg/* &&
+    rm -f /var/cache/pacman/pkg/* && \
     find "/etc" -type s -exec rm {} \;
 
 # Alter root file structure a bit for ostree
